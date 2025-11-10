@@ -7,7 +7,8 @@ const enum OBJECT
 	OBJ_SPACE,
 	OBJ_WALL,
 	OBJ_PLAYER,
-	OBJ_GOAL
+	OBJ_GOAL,
+	OBJ_WARP
 };
 
 const int MAP_W = 8;
@@ -17,48 +18,31 @@ const char MAP_A[MAP_H][MAP_W + 1] =
 {
 	"########",
 	"#      #",
-	"#   P# #",
+	"#    # #",
 	"# #    #",
-	"#G     #",
+	"#   W  #",
 	"########"
+};
 
+const char MAP_B[MAP_H][MAP_W + 1] =
+{
+	"########",
+	"#      #",
+	"#  ### #",
+	"#G#    #",
+	"##    W#",
+	"########"
 };
 
 void mainLoop();
 void initialize(int state[MAP_H][MAP_W + 1], int width, int height, const char* stage);
 void showMoveCount(int moveNum);
 void drow(const int state[MAP_H][MAP_W + 1], int width, int height);
-void update(int state[MAP_H][MAP_W + 1], char input, int width, int height, int* moveNum, bool& goal);
+void update(int state[MAP_H][MAP_W + 1], char input, int width, int height, int* moveNum, bool& goal, bool& warp, const int warpX, const int warpY);
 char moveInput();
-
-//void drow2(void)
-//{
-//	for (int y = 0; y < MAP_H; ++y)
-//	{
-//		for (int x = 0; x < MAP_W; ++x)
-//		{
-//			if (MAP_A[y][x] == '#') cout << '#';
-//			if (MAP_A[y][x] == ' ') cout << ' ';
-//			if (MAP_A[y][x] == 'P') cout << 'P';
-//			if (MAP_A[y][x] == 'G') cout << 'G';
-//		}
-//		cout << endl;
-//	}
-//}
-
 
 int main()
 {
-	//for (int y = 0; y < MAP_H; ++y)
-	//{
-	//	for (int x = 0; x < MAP_W; ++x)
-	//	{
-	//		cout << y << x;
-	//		cout << (unsigned int)&MAP_A[y][x] << endl;
-	//	}
-	//}
-	//cout << MAP_A[1][0] << endl;
-
 	mainLoop();
 }
 
@@ -66,10 +50,19 @@ void mainLoop()
 {
 	int moveNum = 0;
 	bool goal = false;
+	bool map = true;
+	bool warp = false;
+
+	int playerPosX = 4;
+	int playerPosY = 2;
+
+	int warpPosX = -1;
+	int warpPosY = -1;
 
 	int state[MAP_H][MAP_W + 1];
 
 	initialize(state, MAP_W, MAP_H, &MAP_A[0][0]);
+	state[playerPosY][playerPosX] = OBJ_PLAYER;
 
 	while (true)
 	{
@@ -80,12 +73,42 @@ void mainLoop()
 		{
 			break;
 		}
-		else if (moveNum == 15)
+		else if (moveNum >= 15)
 		{
 			break;
 		}
 
-		update(state, moveInput(), MAP_W, MAP_H, &moveNum, goal);
+		warp = false;
+		update(state, moveInput(), MAP_W, MAP_H, &moveNum, goal, warp, warpPosX, warpPosY);
+
+		if (warp)
+		{
+			if (map)
+			{
+				map = false;
+				initialize(state, MAP_W, MAP_H, &MAP_B[0][0]);
+
+			}
+			else
+			{
+				map = true;
+				initialize(state, MAP_W, MAP_H, &MAP_A[0][0]);
+			}
+
+			for (int y = 0; y < MAP_H; ++y)
+			{
+				for (int x = 0; x < MAP_W; ++x)
+				{
+					if (state[y][x] == OBJ_WARP)
+					{
+						warpPosY = y;
+						warpPosX = x;
+						state[y][x] = OBJ_PLAYER;
+					}
+				}
+			}
+
+		}
 
 	}
 
@@ -100,11 +123,6 @@ void initialize(int state[MAP_H][MAP_W + 1], int width, int height, const char* 
 
 	while (y < height)
 	{
-		//cout << y;
-		//cout << x;
-		//cout << (unsigned int)d << endl;
-
-
 		int t = 0;
 		switch (*d)
 		{
@@ -115,6 +133,8 @@ void initialize(int state[MAP_H][MAP_W + 1], int width, int height, const char* 
 		case 'P': t = OBJ_PLAYER;
 			break;
 		case 'G': t = OBJ_GOAL;
+			break;
+		case 'W': t = OBJ_WARP;
 			break;
 		}
 		++d;
@@ -132,12 +152,12 @@ void initialize(int state[MAP_H][MAP_W + 1], int width, int height, const char* 
 
 void showMoveCount(int moveNum)
 {
-	cout << "移動回数:" << moveNum << " 回" << endl;
+	cout << "移動回数:" << moveNum << " ターン目" << endl;
 }
 
 void drow(const int state[MAP_H][MAP_W + 1], int width, int height)
 {
-	const char font[] = { ' ', '#', 'P', 'G' };
+	const char font[] = { ' ', '#', 'P', 'G', 'W'};
 
 	for (int y = 0; y < height; ++y)
 	{
@@ -150,7 +170,7 @@ void drow(const int state[MAP_H][MAP_W + 1], int width, int height)
 	}
 }
 
-void update(int state[MAP_H][MAP_W + 1], char input, int width, int height, int* moveNum, bool& goal)
+void update(int state[MAP_H][MAP_W + 1], char input, int width, int height, int* moveNum, bool& goal, bool& warp, const int warpX, const int warpY)
 {
 	int dx = 0;
 	int dy = 0;
@@ -197,11 +217,20 @@ void update(int state[MAP_H][MAP_W + 1], char input, int width, int height, int*
 
 	if (state[ty][tx] == OBJ_SPACE)
 	{
-		state[ty][tx] = OBJ_PLAYER;
-		state[iy][ix] = OBJ_SPACE;
-		(*moveNum)++;
+		if (state[warpY][warpX] == OBJ_PLAYER)
+		{
+			state[ty][tx] = OBJ_PLAYER;
+			state[iy][ix] = OBJ_WARP;
+			(*moveNum)++;
+		}
+		else
+		{
+			state[ty][tx] = OBJ_PLAYER;
+			state[iy][ix] = OBJ_SPACE;
+			(*moveNum)++;
+		}
 
-		if (*moveNum == 15)
+		if (*moveNum >= 15)
 		{
 			cout << "GAME OVER!" << endl;
 			return;
@@ -216,6 +245,11 @@ void update(int state[MAP_H][MAP_W + 1], char input, int width, int height, int*
 		goal = true;
 		cout << "GOAL!" << endl;
 		return;
+	}
+	else if (state[ty][tx] == OBJ_WARP)
+	{
+		(*moveNum)++;
+		warp = true;
 	}
 
 }
