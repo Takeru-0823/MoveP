@@ -71,10 +71,12 @@ void mainLoop()
 
 		if (goal)
 		{
+			cout << "GOAL!" << endl;
 			break;
 		}
 		else if (moveNum >= 15)
 		{
+			cout << "GAMEOVER!" << endl;
 			break;
 		}
 
@@ -232,7 +234,6 @@ void update(int state[MAP_H][MAP_W + 1], char input, int width, int height, int*
 
 		if (*moveNum >= 15)
 		{
-			cout << "GAME OVER!" << endl;
 			return;
 		}
 	}
@@ -243,7 +244,6 @@ void update(int state[MAP_H][MAP_W + 1], char input, int width, int height, int*
 		(*moveNum)++;
 
 		goal = true;
-		cout << "GOAL!" << endl;
 		return;
 	}
 	else if (state[ty][tx] == OBJ_WARP)
