@@ -37,7 +37,7 @@ const char MAP_B[MAP_H][MAP_W + 1] =
 void mainLoop();
 void initialize(int state[MAP_H][MAP_W + 1], int width, int height, const char* stage);
 void showMoveCount(int moveNum);
-void drow(const int state[MAP_H][MAP_W + 1], int width, int height);
+void draw(const int state[MAP_H][MAP_W + 1], int width, int height);
 void update(int state[MAP_H][MAP_W + 1], char input, int width, int height, int* moveNum, bool& goal, bool& warp, const int warpX, const int warpY);
 char moveInput();
 
@@ -67,7 +67,7 @@ void mainLoop()
 	while (true)
 	{
 		showMoveCount(moveNum);
-		drow(state, MAP_W, MAP_H);
+		draw(state, MAP_W, MAP_H);
 
 		if (goal)
 		{
@@ -157,7 +157,7 @@ void showMoveCount(int moveNum)
 	cout << "移動回数:" << moveNum << " ターン目" << endl;
 }
 
-void drow(const int state[MAP_H][MAP_W + 1], int width, int height)
+void draw(const int state[MAP_H][MAP_W + 1], int width, int height)
 {
 	const char font[] = { ' ', '#', 'P', 'G', 'W'};
 
